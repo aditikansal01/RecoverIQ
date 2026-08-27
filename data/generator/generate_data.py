@@ -150,7 +150,14 @@ def make_payments(customers_df, merchants_df, n, is_eval=False):
         retry_count = np.random.choice([0, 1, 2, 3], p=[0.55, 0.25, 0.13, 0.07])
         created_at = start_date + timedelta(days=random.randint(0, 85), hours=random.randint(0, 23))
 
-        action = baseline_action(failure_reason, retry_count)
+        # Historical data mixes the standard baseline action with some exploration
+        # (a real system logs a variety of interventions over time, not one fixed rule) --
+        # this gives the ML model counterfactual coverage: outcomes for actions OTHER than
+        # the one the baseline strategy would have picked for this failure type.
+        if not is_eval and random.random() < 0.20:
+            action = random.choice(["RETRY_NOW", "RETRY_LATER", "PAYMENT_LINK", "REMINDER", "ESCALATE"])
+        else:
+            action = baseline_action(failure_reason, retry_count)
         prob = recovery_prob(
             failure_reason, action, retry_count,
             cust["previous_successes"], cust["previous_failures"], cust["account_age_days"]
