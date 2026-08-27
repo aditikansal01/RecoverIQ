@@ -1,0 +1,23 @@
+{
+  "payments_evaluated": 1000,
+  "revenue_at_risk": 1611225.83,
+  "recovered_amount": 851326.95,
+  "recovery_rate": 0.516,
+  "technical_timeout_rate": 0.051,
+  "action_distribution": {
+    "RETRY_LATER": 386,
+    "PAYMENT_LINK": 244,
+    "REMINDER": 186,
+    "RETRY_NOW": 125,
+    "ESCALATE": 59
+  },
+  "recovery_rate_by_failure_reason": {
+    "BANK_TIMEOUT": 0.618,
+    "CHECKOUT_ABANDONED": 0.3986,
+    "EXPIRED_CARD": 0.5658,
+    "INSUFFICIENT_FUNDS": 0.4863,
+    "MANDATE_AUTH_FAILED": 0.5,
+    "NETWORK_ERROR": 0.5672,
+    "UNKNOWN": 0.2545
+  }
+}
