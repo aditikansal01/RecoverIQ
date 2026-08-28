@@ -39,7 +39,7 @@ ACTION_COST = {
     "RETRY_LATER":  {"cost": 2,  "friction": 0},
     "PAYMENT_LINK": {"cost": 5,  "friction": 1},
     "REMINDER":     {"cost": 3,  "friction": 1},
-    "ESCALATE":     {"cost": 40, "friction": 3},
+    "ESCALATE":     {"cost": 250, "friction": 3},
 }
 
 

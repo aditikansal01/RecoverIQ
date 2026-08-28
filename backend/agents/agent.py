@@ -1,6 +1,11 @@
 """
-RecoverIQ investigation agent -- standard generate_content + automatic function
-calling, using a model your API key actually has access to.
+RecoverIQ investigation agent (v2 -- standard generate_content + automatic function
+calling, not the newer Interactions API, for broader model/key compatibility).
+
+Given a payment_id, the agent investigates using real tools (never guesses data or
+probabilities), reasons over the evidence, and produces a structured recommendation.
+The agent RECOMMENDS -- it never executes a money action itself. That's the policy
+engine's job (Day 5).
 
 Usage:
     python agent.py PAYMENT_ID
@@ -17,7 +22,7 @@ import tools
 
 load_dotenv()
 
-MODEL = "gemini-3.6-flash"
+MODEL = "gemini-flash-lite-latest"  # confirmed working on this key
 
 SYSTEM_PROMPT = """You are RecoverIQ's payment recovery investigation agent.
 
@@ -30,12 +35,16 @@ Given a failed payment_id, investigate it thoroughly before recommending an acti
    action is clearly better for a reason you can state explicitly (e.g. customer
    opted out of communication, retry limit already reached).
 
-All monetary amounts are in Indian Rupees (₹), not dollars -- always use the ₹ symbol in your reasoning, never $.
+All monetary amounts are in Indian Rupees -- always write "Rs" before amounts in your
+reasoning, never a dollar sign.
 
 You NEVER invent a probability or expected value yourself -- always call the tools.
-You NEVER decide policy limits (retry caps, consent enforcement) -- that is a separate
-system's job; just make your best recommendation and note anything a human reviewer
-should know.
+
+Recommend based on expected value alone. Do NOT factor in customer consent, contact
+preferences, retry limits, or any other compliance/policy constraint when choosing your
+recommendation -- that enforcement happens in a separate, deterministic policy layer
+downstream, on purpose, so compliance rules stay auditable and can't be silently
+reasoned around by the model. Just tell me what maximizes expected recovery.
 
 When you have enough evidence, respond with ONLY a JSON object (no markdown fences,
 no extra text) in this exact shape:
@@ -56,8 +65,10 @@ TOOL_FUNCTIONS = {
 }
 
 
-def run_agent(payment_id: str, verbose: bool = True) -> dict:
-    client = genai.Client()
+def run_agent(payment_id: str, verbose: bool = True,
+              excluded_actions: list | None = None,
+              rejection_reason: str | None = None) -> dict:
+    client = genai.Client()  # reads GEMINI_API_KEY from env
 
     config = types.GenerateContentConfig(
         system_instruction=SYSTEM_PROMPT,
@@ -70,10 +81,19 @@ def run_agent(payment_id: str, verbose: bool = True) -> dict:
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
     )
 
+    user_message = f"Investigate payment {payment_id} and recommend a recovery action."
+    if excluded_actions:
+        user_message += (
+            f"\n\nIMPORTANT: The following action(s) were already recommended and REJECTED "
+            f"by the policy engine: {excluded_actions}. Reason for the most recent rejection: "
+            f"\"{rejection_reason}\". Do not recommend any of these actions again -- "
+            f"investigate and recommend a different, still-viable action."
+        )
+
     contents = [
         types.Content(
             role="user",
-            parts=[types.Part(text=f"Investigate payment {payment_id} and recommend a recovery action.")],
+            parts=[types.Part(text=user_message)],
         )
     ]
 
