@@ -1,0 +1,95 @@
+{
+  "payment_id": "E00129",
+  "final_status": "UNRECOVERED",
+  "action_taken": "RETRY_LATER",
+  "recovered": false,
+  "recovered_amount": 0.0,
+  "attempts_needed": 2,
+  "audit_trail": [
+    {
+      "timestamp": "2026-08-28T20:17:03.881084+00:00",
+      "event_type": "PAYMENT_FAILED",
+      "payload": {
+        "payment_id": "E00129",
+        "amount": 1538.86,
+        "failure_reason": "CHECKOUT_ABANDONED"
+      }
+    },
+    {
+      "timestamp": "2026-08-28T20:17:03.881084+00:00",
+      "event_type": "AI_ANALYSIS_STARTED",
+      "payload": {
+        "attempt": 1,
+        "excluded_actions": []
+      }
+    },
+    {
+      "timestamp": "2026-08-28T20:17:08.272496+00:00",
+      "event_type": "AI_RECOMMENDATION",
+      "payload": {
+        "action": "PAYMENT_LINK",
+        "expected_value": 985.41,
+        "confidence": "high",
+        "reasoning": "Evaluating the candidate actions shows that PAYMENT_LINK yields the highest expected value of Rs 985.41 (recovery probability of 64.36% for an amount of Rs 1538.86 with an action cost of Rs 5). This outperforms RETRY_LATER (expected value of Rs 940.55) and RETRY_NOW (expected value of Rs 609.39). Therefore, sending a payment link is the optimal recovery strategy."
+      }
+    },
+    {
+      "timestamp": "2026-08-28T20:17:08.272496+00:00",
+      "event_type": "POLICY_BLOCKED",
+      "payload": {
+        "action": "PAYMENT_LINK",
+        "rule": "consent_required",
+        "reason": "Customer has not consented to communication. Cannot send a payment link or reminder -- consider a silent retry instead."
+      }
+    },
+    {
+      "timestamp": "2026-08-28T20:17:08.272496+00:00",
+      "event_type": "AGENT_REPLANNED",
+      "payload": {
+        "attempt": 1,
+        "excluded_so_far": ["PAYMENT_LINK"]
+      }
+    },
+    {
+      "timestamp": "2026-08-28T20:17:08.272496+00:00",
+      "event_type": "AI_ANALYSIS_STARTED",
+      "payload": {
+        "attempt": 2,
+        "excluded_actions": ["PAYMENT_LINK"]
+      }
+    },
+    {
+      "timestamp": "2026-08-28T20:17:12.119658+00:00",
+      "event_type": "AI_RECOMMENDATION",
+      "payload": {
+        "action": "RETRY_LATER",
+        "expected_value": 940.55,
+        "confidence": "high",
+        "reasoning": "Among the viable unrejected actions, RETRY_LATER yields the highest expected value of Rs 940.55 with a recovery probability of 0.6125 and zero friction. Although ESCALATE has a higher recovery probability, its high action cost of Rs 250 reduces its net expected value to Rs 888.76 compared to RETRY_LATER. RETRY_NOW provides a lower expected value of Rs 609.39."
+      }
+    },
+    {
+      "timestamp": "2026-08-28T20:17:12.119658+00:00",
+      "event_type": "POLICY_APPROVED",
+      "payload": {
+        "action": "RETRY_LATER",
+        "rule": "none"
+      }
+    },
+    {
+      "timestamp": "2026-08-28T20:17:12.119658+00:00",
+      "event_type": "ACTION_EXECUTED",
+      "payload": {
+        "action": "RETRY_LATER",
+        "execution_status": "FAILED"
+      }
+    },
+    {
+      "timestamp": "2026-08-28T20:17:12.119658+00:00",
+      "event_type": "RECOVERY_FAILED",
+      "payload": {
+        "recovered_amount": 0.0
+      }
+    }
+  ]
+}
