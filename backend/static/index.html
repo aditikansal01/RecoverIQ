@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RecoverIQ — Revenue Recovery Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #100E0A;
+    --surface: #1B1712;
+    --surface-2: #241F18;
+    --border: #332C22;
+    --gold: #E3B341;
+    --gold-dim: #7A6229;
+    --mint: #6FCF97;
+    --coral: #E5766B;
+    --violet: #9C97E8;
+    --text: #F2EEE5;
+    --text-dim: #A69C88;
+    --text-faint: #6E6555;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    padding: 40px 32px 80px;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  header { margin-bottom: 32px; }
+  header .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+  header p { color: var(--text-dim); margin-top: 6px; font-size: 14px; }
+
+  .flowbar {
+    height: 14px;
+    border-radius: 7px;
+    overflow: hidden;
+    display: flex;
+    background: var(--surface-2);
+    margin: 28px 0 10px;
+    border: 1px solid var(--border);
+  }
+  .flowbar div { height: 100%; }
+  .flowbar .recovered { background: var(--mint); }
+  .flowbar .unrecovered { background: var(--surface-2); }
+  .flowbar .pending { background: var(--gold-dim); }
+  .flowbar-legend { display: flex; gap: 20px; font-size: 12px; color: var(--text-dim); margin-bottom: 36px; }
+  .flowbar-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .card .label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .card .value { font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 600; }
+  .card .value.gold { color: var(--gold); }
+  .card .value.mint { color: var(--mint); }
+  .card .sub { font-size: 12px; color: var(--text-faint); margin-top: 6px; }
+
+  .comparison {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin-bottom: 36px;
+  }
+  .comparison h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 14px; }
+  .comparison-row { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .comparison-row:last-child { border-bottom: none; }
+  .comparison-row .name { font-size: 14px; color: var(--text-dim); }
+  .comparison-row .amt { font-family: 'IBM Plex Mono', monospace; font-size: 16px; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+  th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); cursor: pointer; }
+  tr:hover td { background: var(--surface-2); }
+  tr:last-child td { border-bottom: none; }
+  .status { font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 3px 8px; border-radius: 4px; display: inline-block; }
+  .status.RECOVERED { background: rgba(111,207,151,0.15); color: var(--mint); }
+  .status.UNRECOVERED { background: rgba(229,118,107,0.15); color: var(--coral); }
+  .status.MANUAL_REVIEW { background: rgba(156,151,232,0.15); color: var(--violet); }
+  .status.ESCALATED { background: rgba(227,179,65,0.15); color: var(--gold); }
+  .replan-badge { font-size: 10px; color: var(--gold); margin-left: 6px; }
+
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    align-items: center; justify-content: center; z-index: 10; padding: 20px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    max-width: 640px; width: 100%; max-height: 80vh; overflow-y: auto; padding: 24px;
+  }
+  .modal h3 { font-family: 'IBM Plex Mono', monospace; margin-bottom: 4px; }
+  .modal .close { float: right; cursor: pointer; color: var(--text-dim); font-size: 20px; }
+  .trail-item { border-left: 2px solid var(--border); padding: 10px 0 10px 16px; margin-left: 4px; position: relative; }
+  .trail-item::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); position: absolute; left: -5px; top: 14px; }
+  .trail-item .event { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--gold); }
+  .trail-item .payload { font-size: 12px; color: var(--text-dim); margin-top: 4px; line-height: 1.5; }
+
+  .loading, .empty { color: var(--text-faint); font-size: 13px; padding: 24px; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Revenue Recovery Decision Engine</div>
+  <h1>RecoverIQ</h1>
+  <p id="subhead">Loading evaluation results…</p>
+</header>
+
+<div class="flowbar" id="flowbar"></div>
+<div class="flowbar-legend">
+  <span><span class="dot" style="background:var(--mint)"></span>Recovered</span>
+  <span><span class="dot" style="background:var(--surface-2);border:1px solid var(--border)"></span>Unrecovered</span>
+  <span><span class="dot" style="background:var(--gold-dim)"></span>Under review / escalated</span>
+</div>
+
+<div class="cards" id="cards"></div>
+
+<div class="comparison" id="comparison"></div>
+
+<table>
+  <thead>
+    <tr><th>Payment</th><th>Amount</th><th>Failure reason</th><th>Action taken</th><th>Status</th></tr>
+  </thead>
+  <tbody id="payments-body">
+    <tr><td colspan="5" class="loading">Loading…</td></tr>
+  </tbody>
+</table>
+
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <h3 id="modal-title"></h3>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const API = '';
+
+function fmtRs(n) {
+  if (n === null || n === undefined) return '—';
+  return 'Rs ' + Number(n).toLocaleString('en-IN', {maximumFractionDigits: 2});
+}
+
+async function loadSummary() {
+  const res = await fetch(API + '/api/summary');
+  const s = await res.json();
+
+  document.getElementById('subhead').textContent =
+    s.sample_size ? `${s.processed} of ${s.sample_size} sampled payments processed` : 'No sample selected yet';
+
+  const cards = [
+    {label: 'Revenue at risk', value: fmtRs(s.revenue_at_risk), cls: ''},
+    {label: 'AI recovered', value: fmtRs(s.ai_recovered_amount), cls: 'mint'},
+    {label: 'AI recovery rate', value: s.ai_recovery_rate !== null ? (s.ai_recovery_rate*100).toFixed(1) + '%' : '—', cls: 'gold'},
+    {label: 'Payments needing replan', value: s.replanned_count ?? 0, cls: ''},
+    {label: 'Policy blocks caught', value: s.policy_block_count ?? 0, cls: 'gold'},
+    {label: 'Manual review / escalated', value: (s.manual_review_count ?? 0) + (s.escalated_count ?? 0), cls: ''},
+  ];
+  document.getElementById('cards').innerHTML = cards.map(c => `
+    <div class="card">
+      <div class="label">${c.label}</div>
+      <div class="value ${c.cls}">${c.value}</div>
+    </div>`).join('');
+
+  let compHtml = '<h2>AI system vs. rule-based baseline</h2>';
+  compHtml += `<div class="comparison-row"><span class="name">AI recovered (this sample)</span><span class="amt">${fmtRs(s.ai_recovered_amount)}</span></div>`;
+  if (s.baseline_recovered_amount_same_sample_prorated !== null) {
+    compHtml += `<div class="comparison-row"><span class="name">Baseline recovered (same sample, prorated)</span><span class="amt">${fmtRs(s.baseline_recovered_amount_same_sample_prorated)}</span></div>`;
+  }
+  if (s.baseline_recovered_amount_full_1000 !== null) {
+    compHtml += `<div class="comparison-row"><span class="name">Baseline recovered (reference: full 1,000-payment set)</span><span class="amt">${fmtRs(s.baseline_recovered_amount_full_1000)}</span></div>`;
+  }
+  document.getElementById('comparison').innerHTML = compHtml;
+
+  return s;
+}
+
+async function loadPayments() {
+  const res = await fetch(API + '/api/payments');
+  const payments = await res.json();
+
+  if (payments.length === 0) {
+    document.getElementById('payments-body').innerHTML = '<tr><td colspan="5" class="empty">No payments processed yet. Run run_ai_batch.py.</td></tr>';
+    document.getElementById('flowbar').innerHTML = '';
+    return;
+  }
+
+  const recovered = payments.filter(p => p.recovered).reduce((s,p) => s + p.amount, 0);
+  const review = payments.filter(p => p.final_status === 'MANUAL_REVIEW' || p.final_status === 'ESCALATED').reduce((s,p) => s + p.amount, 0);
+  const total = payments.reduce((s,p) => s + p.amount, 0);
+  const unrecovered = total - recovered - review;
+
+  document.getElementById('flowbar').innerHTML = `
+    <div class="recovered" style="width:${(recovered/total*100)}%"></div>
+    <div class="pending" style="width:${(review/total*100)}%"></div>
+    <div class="unrecovered" style="width:${(unrecovered/total*100)}%"></div>
+  `;
+
+  document.getElementById('payments-body').innerHTML = payments.map(p => `
+    <tr onclick="showDetail('${p.payment_id}')">
+      <td class="mono">${p.payment_id}</td>
+      <td class="mono">${fmtRs(p.amount)}</td>
+      <td>${p.failure_reason ?? '—'}</td>
+      <td>${p.action_taken ?? '—'} ${p.attempts_needed > 1 ? '<span class="replan-badge">↻ replanned</span>' : ''}</td>
+      <td><span class="status ${p.final_status}">${p.final_status}</span></td>
+    </tr>`).join('');
+}
+
+async function showDetail(paymentId) {
+  const res = await fetch(API + '/api/payment/' + paymentId);
+  const p = await res.json();
+  document.getElementById('modal-title').textContent = paymentId;
+  const trail = (p.audit_trail || []).map(e => `
+    <div class="trail-item">
+      <div class="event">${e.event_type}</div>
+      <div class="payload">${JSON.stringify(e.payload)}</div>
+    </div>`).join('');
+  document.getElementById('modal-body').innerHTML = trail || '<p class="empty">No audit trail available.</p>';
+  document.getElementById('modal-backdrop').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-backdrop').classList.remove('open');
+}
+
+loadSummary();
+loadPayments();
+setInterval(() => { loadSummary(); loadPayments(); }, 15000); // auto-refresh while batch keeps running
+</script>
+
+</body>
+</html>
