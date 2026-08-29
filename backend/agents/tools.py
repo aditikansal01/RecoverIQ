@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "simulator"))
 from payment_simulator import ACTION_COST, ACTIONS  # noqa: E402
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "generated")
+_SCENARIO_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "experiments", "policy_scenarios")
 
 _payments = None
 _customers = None
@@ -27,8 +28,20 @@ def _load_data():
     if _payments is None:
         hist = pd.read_csv(os.path.join(_DATA_DIR, "payments.csv"))
         ev = pd.read_csv(os.path.join(_DATA_DIR, "payments_eval.csv"))
-        _payments = pd.concat([hist, ev], ignore_index=True).set_index("payment_id")
-        _customers = pd.read_csv(os.path.join(_DATA_DIR, "customers.csv")).set_index("customer_id")
+        customers = pd.read_csv(os.path.join(_DATA_DIR, "customers.csv"))
+
+        # merge in policy scenario test cases if present -- these are never written
+        # to the original data files, only loaded alongside them in memory
+        scen_payments_path = os.path.join(_SCENARIO_DIR, "scenario_payments.csv")
+        scen_customers_path = os.path.join(_SCENARIO_DIR, "scenario_customers.csv")
+        frames = [hist, ev]
+        if os.path.exists(scen_payments_path):
+            frames.append(pd.read_csv(scen_payments_path))
+        if os.path.exists(scen_customers_path):
+            customers = pd.concat([customers, pd.read_csv(scen_customers_path)], ignore_index=True)
+
+        _payments = pd.concat(frames, ignore_index=True).set_index("payment_id")
+        _customers = customers.set_index("customer_id")
 
 
 def get_payment_details(payment_id: str) -> dict:

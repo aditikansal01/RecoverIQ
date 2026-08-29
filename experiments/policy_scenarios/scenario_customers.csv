@@ -1,0 +1,4 @@
+customer_id,account_age_days,previous_successes,previous_failures,avg_payment_amount,consent_status,preferred_payment_method
+SCEN_CUST_HV,400,10,1,5000,True,NETBANKING
+SCEN_CUST_NC,60,2,1,1500,False,UPI
+SCEN_CUST_RL,200,5,2,1200,True,CARD

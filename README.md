@@ -134,6 +134,28 @@ demo with zero visible failures is usually a sign of over-rehearsal, not robustn
 
 ---
 
+## Policy rule verification
+
+Each policy rule was tested against the real thresholds, not weakened ones:
+
+| Rule | Verified how | Result |
+|---|---|---|
+| High-value review (>Rs 50,000) | Live agent scenario (`SCEN_HIGHVALUE`, Rs 75,000) | PASS — routed to `MANUAL_REVIEW` regardless of the agent's recommended action |
+| Consent enforcement | Live agent scenario (`SCEN_NOCONSENT`) | PASS — agent recommended `PAYMENT_LINK` (blind to consent by design), policy blocked it, agent replanned to `RETRY_LATER` |
+| Max retries (retry_count >= 3) | Direct unit test (`test_policy_engine.py`) | PASS — but see note below |
+| Duplicate action prevention | Direct unit test | PASS |
+
+**Why max-retries is unit-tested rather than agent-demonstrated:** probing the deployed
+model showed `PAYMENT_LINK` (cost: Rs 5) beats retry actions on expected value across
+every failure type we tested, once cost is weighed against probability. This means the
+agent's own economics rarely recommends a retry at the retry limit in the first place —
+the policy rule exists as a safety net for a case the agent is unlikely to trigger on its
+own, which is reassuring rather than a gap. We verified the rule directly with 9 unit
+tests covering both the block cases and the important negative cases (e.g. retry is
+still allowed *without* consent — only communication actions are blocked).
+
+----
+
 ## What we deliberately did not use, and why
 
 | Considered | Decision | Reasoning |

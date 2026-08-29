@@ -1,0 +1,239 @@
+{
+  "results": [
+    {
+      "payment_id": "SCEN_HIGHVALUE",
+      "final_status": "MANUAL_REVIEW",
+      "recommended_action": "ESCALATE",
+      "policy_reason": "Amount Rs 75,000.00 exceeds the Rs 50,000 auto-execution limit. Routing to human review.",
+      "audit_trail": [
+        {
+          "timestamp": "2026-08-29T12:51:48.123115+00:00",
+          "event_type": "PAYMENT_FAILED",
+          "payload": {
+            "payment_id": "SCEN_HIGHVALUE",
+            "amount": 75000.0,
+            "failure_reason": "BANK_TIMEOUT"
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:51:48.123115+00:00",
+          "event_type": "AI_ANALYSIS_STARTED",
+          "payload": {
+            "attempt": 1,
+            "excluded_actions": []
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:02.632151+00:00",
+          "event_type": "AI_RECOMMENDATION",
+          "payload": {
+            "action": "ESCALATE",
+            "expected_value": 47840,
+            "confidence": "high",
+            "reasoning": "For this high-value payment of Rs 75,000, ESCALATE yields the highest expected value of Rs 47,840 due to a strong recovery probability of 64.12%, outweighing its higher operational cost of Rs 250. While PAYMENT_LINK has a slightly lower friction score, ESCALATE provides the maximum net financial return given the significant stakes involved."
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:02.632151+00:00",
+          "event_type": "POLICY_REVIEW",
+          "payload": {
+            "action": "ESCALATE",
+            "rule": "high_value_review",
+            "reason": "Amount Rs 75,000.00 exceeds the Rs 50,000 auto-execution limit. Routing to human review."
+          }
+        }
+      ]
+    },
+    {
+      "payment_id": "SCEN_NOCONSENT",
+      "final_status": "UNRECOVERED",
+      "action_taken": "RETRY_LATER",
+      "recovered": false,
+      "recovered_amount": 0.0,
+      "attempts_needed": 2,
+      "audit_trail": [
+        {
+          "timestamp": "2026-08-29T12:52:02.634179+00:00",
+          "event_type": "PAYMENT_FAILED",
+          "payload": {
+            "payment_id": "SCEN_NOCONSENT",
+            "amount": 2200.0,
+            "failure_reason": "EXPIRED_CARD"
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:02.634179+00:00",
+          "event_type": "AI_ANALYSIS_STARTED",
+          "payload": {
+            "attempt": 1,
+            "excluded_actions": []
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:06.983211+00:00",
+          "event_type": "AI_RECOMMENDATION",
+          "payload": {
+            "action": "PAYMENT_LINK",
+            "expected_value": 1453.16,
+            "confidence": "high",
+            "reasoning": "PAYMENT_LINK yields the highest expected value of Rs 1453.16 for this Rs 2200 payment with a recovery probability of 0.6628 and a low friction score of 1. While ESCALATE has a slightly higher recovery probability, its high operational cost and friction score make PAYMENT_LINK the optimal choice."
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:06.984127+00:00",
+          "event_type": "POLICY_BLOCKED",
+          "payload": {
+            "action": "PAYMENT_LINK",
+            "rule": "consent_required",
+            "reason": "Customer has not consented to communication. Cannot send a payment link or reminder -- consider a silent retry instead."
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:06.984127+00:00",
+          "event_type": "AGENT_REPLANNED",
+          "payload": {
+            "attempt": 1,
+            "excluded_so_far": [
+              "PAYMENT_LINK"
+            ]
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:06.984127+00:00",
+          "event_type": "AI_ANALYSIS_STARTED",
+          "payload": {
+            "attempt": 2,
+            "excluded_actions": [
+              "PAYMENT_LINK"
+            ]
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:11.029966+00:00",
+          "event_type": "AI_RECOMMENDATION",
+          "payload": {
+            "action": "RETRY_LATER",
+            "expected_value": 1389.5,
+            "confidence": "high",
+            "reasoning": "Although PAYMENT_LINK has the highest expected value (Rs 1453.16), it was rejected by the policy engine due to lack of customer communication consent. Among the viable, silent actions that respect consent rules, RETRY_LATER yields the highest expected value at Rs 1389.50 with zero friction and no communication required, outperforming RETRY_NOW (Rs 917.16) and ESCALATE (Rs 1413.42 net of high operational costs)."
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:11.029966+00:00",
+          "event_type": "POLICY_APPROVED",
+          "payload": {
+            "action": "RETRY_LATER",
+            "rule": "none"
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:11.030964+00:00",
+          "event_type": "ACTION_EXECUTED",
+          "payload": {
+            "action": "RETRY_LATER",
+            "execution_status": "FAILED"
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:11.030964+00:00",
+          "event_type": "RECOVERY_FAILED",
+          "payload": {
+            "recovered_amount": 0.0
+          }
+        }
+      ]
+    },
+    {
+      "payment_id": "SCEN_MAXRETRY",
+      "final_status": "RECOVERED",
+      "action_taken": "PAYMENT_LINK",
+      "recovered": true,
+      "recovered_amount": 1200.0,
+      "attempts_needed": 1,
+      "audit_trail": [
+        {
+          "timestamp": "2026-08-29T12:52:11.033028+00:00",
+          "event_type": "PAYMENT_FAILED",
+          "payload": {
+            "payment_id": "SCEN_MAXRETRY",
+            "amount": 1200.0,
+            "failure_reason": "NETWORK_ERROR"
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:11.033028+00:00",
+          "event_type": "AI_ANALYSIS_STARTED",
+          "payload": {
+            "attempt": 1,
+            "excluded_actions": []
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:15.534044+00:00",
+          "event_type": "AI_RECOMMENDATION",
+          "payload": {
+            "action": "PAYMENT_LINK",
+            "expected_value": 463.6,
+            "confidence": "high",
+            "reasoning": "Payment SCEN_MAXRETRY failed due to NETWORK_ERROR with a retry count of 3. Among all evaluated actions, PAYMENT_LINK yields the highest expected value of Rs 463.60 with a moderate friction score of 1. Although RETRY_LATER has a slightly lower expected value of Rs 429.16, the retry count has already reached 3, making an alternative channel like sending a payment link more effective."
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:15.535046+00:00",
+          "event_type": "POLICY_APPROVED",
+          "payload": {
+            "action": "PAYMENT_LINK",
+            "rule": "none"
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:15.535046+00:00",
+          "event_type": "ACTION_EXECUTED",
+          "payload": {
+            "action": "PAYMENT_LINK",
+            "execution_status": "SUCCESS"
+          }
+        },
+        {
+          "timestamp": "2026-08-29T12:52:15.535046+00:00",
+          "event_type": "PAYMENT_RECOVERED",
+          "payload": {
+            "recovered_amount": 1200.0
+          }
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "payment_id": "SCEN_HIGHVALUE",
+      "description": "Rs 75,000 payment must be routed to human review, regardless of recommended action.",
+      "expected_rule": "high_value_review",
+      "rule_fired": true,
+      "final_status": "MANUAL_REVIEW",
+      "expected_final_status": "MANUAL_REVIEW",
+      "status_matches_expectation": true,
+      "PASS": true
+    },
+    {
+      "payment_id": "SCEN_NOCONSENT",
+      "description": "Customer opted out of communication; agent (blind to consent) should get PAYMENT_LINK or REMINDER blocked, then replan to a non-communication action.",
+      "expected_rule": "consent_required",
+      "rule_fired": true,
+      "final_status": "UNRECOVERED",
+      "expected_final_status": null,
+      "status_matches_expectation": true,
+      "PASS": true
+    },
+    {
+      "payment_id": "SCEN_MAXRETRY",
+      "description": "retry_count already at the limit (3); any RETRY_NOW/RETRY_LATER recommendation must be blocked, forcing a non-retry action.",
+      "expected_rule": "max_retries",
+      "rule_fired": false,
+      "final_status": "RECOVERED",
+      "expected_final_status": null,
+      "status_matches_expectation": true,
+      "PASS": false
+    }
+  ]
+}
