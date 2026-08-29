@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "simulator"))
 import agent as agent_module  # noqa: E402
 import tools  # noqa: E402
 from policy_engine import evaluate_policy  # noqa: E402
+from decision_engine import select_action, VALID_MODES  # noqa: E402
 from payment_simulator import PaymentSimulator  # noqa: E402
 
 MAX_REPLAN_ATTEMPTS = 3
@@ -32,7 +33,16 @@ def _now():
     return datetime.now(timezone.utc).isoformat()
 
 
-def process_payment(payment_id: str, verbose: bool = True, sim_seed: int | None = None) -> dict:
+def process_payment(payment_id: str, verbose: bool = True, sim_seed: int | None = None,
+                     optimize_for: str = "MAX_RECOVERY") -> dict:
+    """
+    optimize_for: MAX_RECOVERY (default -- matches the behavior used for the reported
+                  100-payment evaluation), BALANCED, or MIN_FRICTION. See
+                  backend/policy/decision_engine.py for what each mode actually does.
+    """
+    if optimize_for not in VALID_MODES:
+        raise ValueError(f"Unknown optimize_for '{optimize_for}'. Valid: {sorted(VALID_MODES)}")
+
     audit_trail = []
 
     def log(event_type, payload):
@@ -50,6 +60,7 @@ def process_payment(payment_id: str, verbose: bool = True, sim_seed: int | None 
 
     log("PAYMENT_FAILED", {"payment_id": payment_id, "amount": payment["amount"],
                             "failure_reason": payment["failure_reason"]})
+    log("OPTIMIZE_MODE_SET", {"optimize_for": optimize_for})
 
     excluded_actions = []
     rejection_reason = None
@@ -68,10 +79,31 @@ def process_payment(payment_id: str, verbose: bool = True, sim_seed: int | None 
             return {"payment_id": payment_id, "final_status": "AGENT_ERROR",
                     "audit_trail": audit_trail, "error": recommendation}
 
-        action = recommendation["recommended_action"]
-        log("AI_RECOMMENDATION", {"action": action, "expected_value": recommendation.get("expected_value"),
+        agent_top_pick = recommendation["recommended_action"]
+        log("AI_RECOMMENDATION", {"action": agent_top_pick, "expected_value": recommendation.get("expected_value"),
                                    "confidence": recommendation.get("confidence"),
                                    "reasoning": recommendation.get("reasoning")})
+
+        # Deterministic decision layer: pick the actual action to pursue based on the
+        # merchant's mode, from the full candidate list the agent evaluated -- not
+        # necessarily the agent's own top pick. Falls back to the agent's pick if it
+        # didn't report candidates (e.g. an older/malformed response).
+        candidates = recommendation.get("candidates")
+        # exclude anything already rejected by policy in this investigation
+        available_candidates = [c for c in (candidates or []) if c.get("action") not in excluded_actions]
+
+        if available_candidates:
+            decision = select_action(available_candidates, mode=optimize_for)
+            action = decision["action"]
+            if action != agent_top_pick:
+                log("MODE_OVERRIDE", {
+                    "optimize_for": optimize_for, "agent_top_pick": agent_top_pick,
+                    "mode_selected_action": action, "score": decision["score"],
+                })
+        else:
+            action = agent_top_pick
+            log("MODE_DECISION_FALLBACK", {"reason": "no candidates reported, using agent's own pick"})
+
 
         decision = evaluate_policy(payment, customer, action, previously_tried_actions=excluded_actions)
 
@@ -128,10 +160,11 @@ def process_payment(payment_id: str, verbose: bool = True, sim_seed: int | None 
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python orchestrator.py PAYMENT_ID")
+    if len(sys.argv) not in (2, 3):
+        print("Usage: python orchestrator.py PAYMENT_ID [MAX_RECOVERY|BALANCED|MIN_FRICTION]")
         sys.exit(1)
 
-    result = process_payment(sys.argv[1])
+    mode = sys.argv[2] if len(sys.argv) == 3 else "MAX_RECOVERY"
+    result = process_payment(sys.argv[1], optimize_for=mode)
     print("\n=== FINAL RESULT ===")
     print(json.dumps(result, indent=2, default=str))

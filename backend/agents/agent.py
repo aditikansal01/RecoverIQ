@@ -110,13 +110,22 @@ system's job; just make your best recommendation and note anything a human revie
 should know.
 
 When you have enough evidence, respond with ONLY a JSON object (no markdown fences,
-no extra text) in this exact shape:
+no extra text) in this exact shape. Include ALL FIVE candidates you evaluated, not
+just your top pick -- a separate deterministic system uses this full list to make the
+final decision based on the merchant's chosen priorities:
 {
   "payment_id": "...",
   "recommended_action": "...",
   "expected_value": <number>,
   "confidence": "low" | "medium" | "high",
-  "reasoning": "2-4 sentences explaining why, referencing the actual numbers you found"
+  "reasoning": "2-4 sentences explaining why, referencing the actual numbers you found",
+  "candidates": [
+    {"action": "RETRY_NOW", "expected_value": <number>, "friction_score": <number>, "amount": <number>},
+    {"action": "RETRY_LATER", "expected_value": <number>, "friction_score": <number>, "amount": <number>},
+    {"action": "PAYMENT_LINK", "expected_value": <number>, "friction_score": <number>, "amount": <number>},
+    {"action": "REMINDER", "expected_value": <number>, "friction_score": <number>, "amount": <number>},
+    {"action": "ESCALATE", "expected_value": <number>, "friction_score": <number>, "amount": <number>}
+  ]
 }
 """
 
