@@ -1,0 +1,12 @@
+{
+  "sample_size": 100,
+  "processed_so_far": 100,
+  "revenue_at_risk_in_processed_subset": 152671.89,
+  "recovered_amount": 78811.79,
+  "recovery_rate": 0.47,
+  "manual_review_count": 0,
+  "escalated_count": 0,
+  "error_count": 7,
+  "payments_that_needed_replanning": 5,
+  "total_policy_blocks": 3
+}
