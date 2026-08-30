@@ -1,4 +1,5 @@
 # RecoverIQ
+![Architecture](docs/architecture.svg)
 
 ### AI Revenue Recovery Decision Engine
 
